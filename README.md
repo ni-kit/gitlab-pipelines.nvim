@@ -38,11 +38,6 @@ Then run:
 :GitLabPipelinesOpen my-project
 ```
 
-```text
-https://gitlab.com/group/subgroup/project
-https://gitlab.example.com/group/project/-/pipelines
-```
-
 `auth_type` controls the GitLab auth header:
 
 - `private-token` sends `PRIVATE-TOKEN: <token>` for personal, project, and group
