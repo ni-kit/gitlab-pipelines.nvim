@@ -14,6 +14,7 @@ local state = {
   client = nil,
   project = nil,
   refresh_interval = config.defaults.refresh_interval,
+  hide_headers = config.defaults.hide_headers,
   hide_manual_jobs = config.defaults.hide_manual_jobs,
   max_job_name_length = config.defaults.max_job_name_length,
   refreshing = false,
@@ -77,6 +78,7 @@ function M.open(project_name)
   state.project = project
   state.client = client
   state.refresh_interval = config.options.refresh_interval
+  state.hide_headers = config.options.hide_headers
   state.hide_manual_jobs = config.options.hide_manual_jobs
   state.max_job_name_length = config.options.max_job_name_length
 

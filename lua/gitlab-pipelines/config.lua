@@ -6,6 +6,7 @@ M.defaults = {
   jobs_for_pipelines = 5,
   jobs_limit = 100,
   show_jobs = true,
+  hide_headers = false,
   hide_manual_jobs = true,
   max_job_name_length = 13,
   split = "right",

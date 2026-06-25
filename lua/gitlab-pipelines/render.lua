@@ -43,14 +43,6 @@ local function display_width(text)
   return vim.fn.strdisplaywidth(text)
 end
 
-local function pad_right(text, width)
-  local padding = width - display_width(text)
-  if padding <= 0 then
-    return text
-  end
-  return text .. string.rep(" ", padding)
-end
-
 local function truncate_text(text, max_width)
   text = tostring(text or "-")
   max_width = tonumber(max_width)
@@ -71,16 +63,16 @@ local function status_group(status)
 end
 
 local pipeline_columns = {
-  { key = "id", label = "Pipeline", width = 11 },
-  { key = "commit", label = "Commit", width = 10 },
-  { key = "started_at", label = "Started", width = 8 },
-  { key = "elapsed", label = "Elapsed", width = 8 },
+  { key = "id", label = "Pipeline" },
+  { key = "commit", label = "Commit" },
+  { key = "started_at", label = "Started" },
+  { key = "elapsed", label = "Elapsed" },
 }
 
 local function join_pipeline_columns(values)
   local parts = {}
   for _, column in ipairs(pipeline_columns) do
-    table.insert(parts, pad_right(values[column.key] or column.label, column.width))
+    table.insert(parts, values[column.key] or column.label)
   end
   return table.concat(parts, " ")
 end
@@ -88,7 +80,7 @@ end
 local function pipeline_header(stage_width)
   local line = "  " .. join_pipeline_columns({})
   if stage_width > 0 then
-    line = line .. " " .. pad_right("Stages", stage_width) .. " Jobs"
+    line = line .. " Stages Jobs"
   end
   return line
 end
@@ -96,11 +88,11 @@ end
 local function pipeline_rule(stage_width)
   local parts = {}
   for _, column in ipairs(pipeline_columns) do
-    table.insert(parts, string.rep("-", column.width))
+    table.insert(parts, string.rep("-", display_width(column.label)))
   end
   local line = "  " .. table.concat(parts, " ")
   if stage_width > 0 then
-    line = line .. " " .. string.rep("-", stage_width) .. " ----"
+    line = line .. " ------ ----"
   end
   return line
 end
@@ -160,24 +152,30 @@ function M.render(project, pipelines, state)
     highlights = {},
   }
 
-  add_line(result, (" GitLab Pipelines - %s"):format(project.name or project.url))
-  add_line(result, (" Updated %s | polling every %.1fs"):format(
-    os.date("%Y-%m-%d %H:%M:%S"),
-    state.refresh_interval / 1000
-  ))
-  add_line(result, "")
+  if not state.hide_headers then
+    add_line(result, (" GitLab Pipelines - %s"):format(project.name or project.url))
+    add_line(result, (" Updated %s | polling every %.1fs"):format(
+      os.date("%Y-%m-%d %H:%M:%S"),
+      state.refresh_interval / 1000
+    ))
+    add_line(result, "")
+  end
 
   if not pipelines or #pipelines == 0 then
-    add_line(result, pipeline_header(0))
-    add_line(result, pipeline_rule(0))
+    if not state.hide_headers then
+      add_line(result, pipeline_header(0))
+      add_line(result, pipeline_rule(0))
+    end
     add_line(result, " No pipelines found")
     return result
   end
 
   local items, max_stage_count = model.pipeline_items(pipelines, state)
   local stage_width = compact_stage_width(max_stage_count)
-  add_line(result, pipeline_header(stage_width))
-  add_line(result, pipeline_rule(stage_width))
+  if not state.hide_headers then
+    add_line(result, pipeline_header(stage_width))
+    add_line(result, pipeline_rule(stage_width))
+  end
 
   for _, item in ipairs(items) do
     local line, highlights = compact_pipeline_line(item, stage_width, state)
@@ -188,12 +186,16 @@ function M.render(project, pipelines, state)
 end
 
 function M.error(project, message, state)
-  local lines = {
-    (" GitLab Pipelines - %s"):format(project and project.name or "unknown"),
-    (" Updated %s | polling every %.1fs"):format(os.date("%Y-%m-%d %H:%M:%S"), state.refresh_interval / 1000),
-    "",
-    " Error",
-  }
+  local lines = {}
+
+  if not state.hide_headers then
+    table.insert(lines, (" GitLab Pipelines - %s"):format(project and project.name or "unknown"))
+    table.insert(lines, (" Updated %s | polling every %.1fs"):format(os.date("%Y-%m-%d %H:%M:%S"), state.refresh_interval / 1000))
+    table.insert(lines, "")
+  end
+
+  local error_line = #lines + 1
+  table.insert(lines, " Error")
 
   for _, line in ipairs(vim.split(tostring(message), "\n", { plain = true })) do
     table.insert(lines, " " .. line)
@@ -202,7 +204,7 @@ function M.error(project, message, state)
   return {
     lines = lines,
     highlights = {
-      [4] = {
+      [error_line] = {
         {
           group = "GitLabPipelinesFailed",
           start_col = 1,
