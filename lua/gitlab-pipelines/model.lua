@@ -9,27 +9,11 @@ local unfinished_statuses = {
   scheduled = true,
 }
 
-function M.visible_jobs(jobs, hide_manual_jobs)
-  if not jobs or #jobs == 0 then
-    return {}
-  end
-
-  local filtered = {}
-  local should_hide_manual = hide_manual_jobs ~= false
-  for _, job in ipairs(jobs) do
-    if not should_hide_manual or job.status ~= "manual" then
-      table.insert(filtered, job)
-    end
-  end
-
-  return filtered
-end
-
 function M.group_jobs(jobs)
   local groups = {}
   local index_by_stage = {}
 
-  for _, job in ipairs(jobs) do
+  for _, job in ipairs(jobs or {}) do
     local stage = job.stage or "-"
     local index = index_by_stage[stage]
     if not index then
@@ -90,6 +74,9 @@ function M.stage_status(group)
   if counts.canceled then
     return "canceled"
   end
+  if counts.manual then
+    return "manual"
+  end
   if counts.success or counts.skipped then
     return "success"
   end
@@ -119,13 +106,12 @@ function M.notable_job_names(pipeline, groups)
   return job_names_with_status(groups, "running")
 end
 
-function M.pipeline_items(pipelines, state)
+function M.pipeline_items(pipelines)
   local items = {}
   local max_stage_count = 0
 
   for _, pipeline in ipairs(pipelines or {}) do
-    local jobs = M.visible_jobs(pipeline.jobs, state.hide_manual_jobs)
-    local groups = M.group_jobs(jobs)
+    local groups = M.group_jobs(pipeline.jobs)
 
     table.insert(items, {
       pipeline = pipeline,

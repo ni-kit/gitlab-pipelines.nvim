@@ -22,6 +22,7 @@ This plugin opens a read-only buffer that polls GitLab and renders recent pipeli
     pipelines_limit = 10,
     show_jobs = true,
     hide_headers = false,
+    max_job_name_length = 13,
     projects = {
       ["my-project"] = {
         url = "https://gitlab.com/acme/my-project",

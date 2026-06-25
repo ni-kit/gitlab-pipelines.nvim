@@ -203,7 +203,7 @@ function Client:add_pipeline_details(pipelines, callback)
 end
 
 function Client:add_pipeline_jobs(pipelines, callback)
-  self:with_pipeline_data(pipelines, self.options.jobs_for_pipelines, function(pipeline, done)
+  self:with_pipeline_data(pipelines, #pipelines, function(pipeline, done)
     self:jobs(pipeline.id, done)
   end, function(target, index, jobs)
     target[index].jobs = jobs or {}
