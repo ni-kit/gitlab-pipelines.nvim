@@ -14,22 +14,24 @@ function M.group_jobs(jobs)
   local index_by_stage = {}
 
   for _, job in ipairs(jobs or {}) do
-    local stage = job.stage or "-"
-    local index = index_by_stage[stage]
-    if not index then
-      table.insert(groups, {
-        stage = stage,
-        jobs = {},
-        order = #groups + 1,
-        stage_idx = job.stage_idx,
-      })
-      index = #groups
-      index_by_stage[stage] = index
-    elseif groups[index].stage_idx == nil and job.stage_idx ~= nil then
-      groups[index].stage_idx = job.stage_idx
-    end
+    if job.status ~= "manual" then
+      local stage = job.stage or "-"
+      local index = index_by_stage[stage]
+      if not index then
+        table.insert(groups, {
+          stage = stage,
+          jobs = {},
+          order = #groups + 1,
+          stage_idx = job.stage_idx,
+        })
+        index = #groups
+        index_by_stage[stage] = index
+      elseif groups[index].stage_idx == nil and job.stage_idx ~= nil then
+        groups[index].stage_idx = job.stage_idx
+      end
 
-    table.insert(groups[index].jobs, job)
+      table.insert(groups[index].jobs, job)
+    end
   end
 
   -- GitLab returns jobs newest-first for this endpoint in practice, so fallback
@@ -73,9 +75,6 @@ function M.stage_status(group)
   end
   if counts.canceled then
     return "canceled"
-  end
-  if counts.manual then
-    return "manual"
   end
   if counts.success or counts.skipped then
     return "success"
