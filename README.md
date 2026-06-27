@@ -52,3 +52,10 @@ Then run:
 - `:GitLabPipelinesRefresh` refreshes immediately.
 - `:GitLabPipelinesStop` stops polling but leaves the buffer open.
 - `:GitLabPipelinesClose` closes the preview and stops polling.
+
+## Keymaps
+
+Inside the preview buffer:
+
+- `gx` opens the pipeline or merge request under the cursor in your browser.
+  Configurable via the `open_key` option (set to `""` to disable).
