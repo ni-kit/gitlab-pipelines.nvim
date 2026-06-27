@@ -15,6 +15,7 @@ local function set_highlights()
 	vim.api.nvim_set_hl(0, "GitLabPipelinesManual", { fg = "#d2a8ff", bold = true })
 	vim.api.nvim_set_hl(0, "GitLabPipelinesScheduled", { fg = "#ffa657", bold = true })
 	vim.api.nvim_set_hl(0, "GitLabPipelinesStatus", { fg = "#c9d1d9", bold = true })
+	vim.api.nvim_set_hl(0, "GitLabPipelinesMergeRequest", { fg = "#6e7681", underline = true })
 end
 
 local function valid_buf(buf)

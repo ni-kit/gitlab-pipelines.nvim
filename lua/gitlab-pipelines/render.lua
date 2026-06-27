@@ -69,26 +69,45 @@ local pipeline_columns = {
 	{ key = "elapsed", label = "Elapsed" },
 }
 
-local function join_pipeline_columns(values)
+local function pad_right(text, width)
+	local pad = width - display_width(text)
+	if pad > 0 then
+		text = text .. string.rep(" ", pad)
+	end
+	return text
+end
+
+local function column_width(column, id_width)
+	if column.key == "id" then
+		return math.max(id_width or 0, display_width(column.label))
+	end
+	return display_width(column.label)
+end
+
+local function join_pipeline_columns(values, id_width)
 	local parts = {}
 	for _, column in ipairs(pipeline_columns) do
-		table.insert(parts, values[column.key] or column.label)
+		local text = values[column.key] or column.label
+		if column.key == "id" then
+			text = pad_right(text, column_width(column, id_width))
+		end
+		table.insert(parts, text)
 	end
 	return table.concat(parts, " ")
 end
 
-local function pipeline_header(stage_width)
-	local line = "  " .. join_pipeline_columns({})
+local function pipeline_header(stage_width, id_width)
+	local line = "  " .. join_pipeline_columns({}, id_width)
 	if stage_width > 0 then
 		line = line .. " Stages Jobs"
 	end
 	return line
 end
 
-local function pipeline_rule(stage_width)
+local function pipeline_rule(stage_width, id_width)
 	local parts = {}
 	for _, column in ipairs(pipeline_columns) do
-		table.insert(parts, string.rep("-", display_width(column.label)))
+		table.insert(parts, string.rep("-", column_width(column, id_width)))
 	end
 	local line = "  " .. table.concat(parts, " ")
 	if stage_width > 0 then
@@ -138,18 +157,21 @@ local function pipeline_id_segment(pipeline)
 
 	local mr_iid = merge_request_iid(pipeline)
 	if mr_iid then
-		local mr_start = #id_text + 1 -- skip the "@"
+		local mr_start = #id_text -- include the "@" in the pale span
 		id_text = id_text .. "@" .. mr_iid
 		local mr_url = merge_request_url(pipeline, mr_iid)
-		if mr_url then
-			table.insert(links, { start_col = mr_start, end_col = #id_text, url = mr_url })
-		end
+		table.insert(links, {
+			start_col = mr_start,
+			end_col = #id_text,
+			url = mr_url,
+			group = "GitLabPipelinesMergeRequest",
+		})
 	end
 
 	return id_text, links
 end
 
-local function pipeline_line(pipeline, id_text)
+local function pipeline_line(pipeline, id_text, id_width)
 	local sha = pipeline.sha and pipeline.sha:sub(1, 8) or "-"
 	id_text = id_text or pipeline_id_segment(pipeline)
 
@@ -158,10 +180,10 @@ local function pipeline_line(pipeline, id_text)
 		commit = sha,
 		started_at = time.format_started_at(pipeline.started_at),
 		elapsed = time.format_duration(time.elapsed(pipeline)),
-	})
+	}, id_width)
 end
 
-local function compact_pipeline_line(item, stage_width, state)
+local function compact_pipeline_line(item, stage_width, state, id_width)
 	local highlights = {}
 	local links = {}
 	local line = append_segment("", highlights, status_box, status_group(item.pipeline.status or "unknown"))
@@ -172,11 +194,13 @@ local function compact_pipeline_line(item, stage_width, state)
 	for _, link in ipairs(id_links) do
 		local start_col = id_base + link.start_col
 		local end_col = id_base + link.end_col
-		table.insert(links, { start_col = start_col, end_col = end_col, url = link.url })
-		table.insert(highlights, { group = "Underlined", start_col = start_col, end_col = end_col })
+		if link.url then
+			table.insert(links, { start_col = start_col, end_col = end_col, url = link.url })
+		end
+		table.insert(highlights, { group = link.group or "Underlined", start_col = start_col, end_col = end_col })
 	end
 
-	line = append_segment(line, highlights, " " .. pipeline_line(item.pipeline, id_text), nil)
+	line = append_segment(line, highlights, " " .. pipeline_line(item.pipeline, id_text, id_width), nil)
 
 	if stage_width > 0 then
 		line = append_segment(line, highlights, " ", nil)
@@ -235,13 +259,19 @@ function M.render(project, pipelines, state)
 
 	local items, max_stage_count = model.pipeline_items(pipelines, state)
 	local stage_width = compact_stage_width(max_stage_count)
+
+	local id_width = 0
+	for _, item in ipairs(items) do
+		id_width = math.max(id_width, display_width((pipeline_id_segment(item.pipeline))))
+	end
+
 	if not state.hide_headers then
-		add_line(result, pipeline_header(stage_width))
-		add_line(result, pipeline_rule(stage_width))
+		add_line(result, pipeline_header(stage_width, id_width))
+		add_line(result, pipeline_rule(stage_width, id_width))
 	end
 
 	for _, item in ipairs(items) do
-		local line, highlights, links, fallback_url = compact_pipeline_line(item, stage_width, state)
+		local line, highlights, links, fallback_url = compact_pipeline_line(item, stage_width, state, id_width)
 		add_line(result, line, highlights)
 		result.links[#result.lines] = { regions = links, fallback = fallback_url }
 	end
