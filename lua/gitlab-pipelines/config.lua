@@ -34,6 +34,27 @@ function M.project_names()
   return names
 end
 
+function M.resolve_all()
+  local names = M.project_names()
+  if #names == 0 then
+    local project, err = M.resolve_project(nil)
+    if err then
+      return nil, err
+    end
+    return { project }, nil
+  end
+
+  local projects = {}
+  for _, name in ipairs(names) do
+    local project, err = M.resolve_project(name)
+    if err then
+      return nil, err
+    end
+    table.insert(projects, project)
+  end
+  return projects, nil
+end
+
 function M.resolve_project(name)
   local projects = M.options.projects or {}
   local project

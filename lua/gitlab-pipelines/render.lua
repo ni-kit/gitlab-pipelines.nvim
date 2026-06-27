@@ -246,6 +246,8 @@ function M.render(project, pipelines, state)
 			(" Updated %s | polling every %.1fs"):format(os.date("%Y-%m-%d %H:%M:%S"), state.refresh_interval / 1000)
 		)
 		add_line(result, "")
+	else
+		add_line(result, (" %s"):format(project.name or project.url))
 	end
 
 	if not pipelines or #pipelines == 0 then
@@ -279,6 +281,36 @@ function M.render(project, pipelines, state)
 	return result
 end
 
+function M.combine(sections)
+  local result = {
+    lines = {},
+    highlights = {},
+    links = {},
+  }
+
+  for index, section in ipairs(sections) do
+    if index > 1 then
+      table.insert(result.lines, "")
+    end
+
+    local offset = #result.lines
+
+    for _, line in ipairs(section.lines or {}) do
+      table.insert(result.lines, line)
+    end
+
+    for line_number, highlights in pairs(section.highlights or {}) do
+      result.highlights[offset + line_number] = highlights
+    end
+
+    for line_number, entry in pairs(section.links or {}) do
+      result.links[offset + line_number] = entry
+    end
+  end
+
+  return result
+end
+
 function M.url_at(rendered, line_number, col)
 	local entry = rendered.links and rendered.links[line_number]
 	if not entry then
@@ -304,6 +336,8 @@ function M.error(project, message, state)
 			(" Updated %s | polling every %.1fs"):format(os.date("%Y-%m-%d %H:%M:%S"), state.refresh_interval / 1000)
 		)
 		table.insert(lines, "")
+	else
+		table.insert(lines, (" %s"):format(project and project.name or "unknown"))
 	end
 
 	local error_line = #lines + 1
