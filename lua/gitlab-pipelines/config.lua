@@ -9,6 +9,7 @@ M.defaults = {
   max_job_name_length = 13,
   split = "right",
   width = 84,
+  open_key = "gx",
   auth_type = "private-token",
   projects = {},
 }
