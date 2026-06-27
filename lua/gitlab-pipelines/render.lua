@@ -250,6 +250,10 @@ function M.render(project, pipelines, state)
 		add_line(result, (" %s"):format(project.name or project.url))
 	end
 
+	if type(project.url) == "string" and project.url ~= "" then
+		result.links[1] = { regions = {}, fallback = project.url }
+	end
+
 	if not pipelines or #pipelines == 0 then
 		if not state.hide_headers then
 			add_line(result, pipeline_header(0))
@@ -282,33 +286,33 @@ function M.render(project, pipelines, state)
 end
 
 function M.combine(sections)
-  local result = {
-    lines = {},
-    highlights = {},
-    links = {},
-  }
+	local result = {
+		lines = {},
+		highlights = {},
+		links = {},
+	}
 
-  for index, section in ipairs(sections) do
-    if index > 1 then
-      table.insert(result.lines, "")
-    end
+	for index, section in ipairs(sections) do
+		if index > 1 then
+			table.insert(result.lines, "")
+		end
 
-    local offset = #result.lines
+		local offset = #result.lines
 
-    for _, line in ipairs(section.lines or {}) do
-      table.insert(result.lines, line)
-    end
+		for _, line in ipairs(section.lines or {}) do
+			table.insert(result.lines, line)
+		end
 
-    for line_number, highlights in pairs(section.highlights or {}) do
-      result.highlights[offset + line_number] = highlights
-    end
+		for line_number, highlights in pairs(section.highlights or {}) do
+			result.highlights[offset + line_number] = highlights
+		end
 
-    for line_number, entry in pairs(section.links or {}) do
-      result.links[offset + line_number] = entry
-    end
-  end
+		for line_number, entry in pairs(section.links or {}) do
+			result.links[offset + line_number] = entry
+		end
+	end
 
-  return result
+	return result
 end
 
 function M.url_at(rendered, line_number, col)

@@ -24,7 +24,8 @@ This plugin opens a read-only buffer that polls GitLab and renders recent pipeli
     hide_headers = false,
     max_job_name_length = 13,
     projects = {
-      ["my-project"] = {
+      {
+        name = "my-project",
         url = "https://gitlab.com/acme/my-project",
         token = vim.env.GITLAB_TOKEN,
         auth_type = "private-token"
