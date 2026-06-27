@@ -226,7 +226,7 @@ local function compact_pipeline_line(item, stage_width, state, id_width)
 		for _, name in ipairs(item.notable_jobs) do
 			table.insert(names, truncate_text(name, state.max_job_name_length))
 		end
-		line = append_segment(line, highlights, " (" .. table.concat(names, ", ") .. ")", nil)
+		line = append_segment(line, highlights, table.concat(names, ", "), nil)
 	end
 
 	return line, highlights, links, item.pipeline.web_url
